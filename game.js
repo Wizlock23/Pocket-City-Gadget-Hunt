@@ -1,5 +1,6 @@
 import * as T from './three.module.js';
-// Pocket City 1.1 — shared geometry, instanced scenery, fixed-step movement.
+import {buildExpansion} from './expansion.js?v=1.2.0';
+// Pocket City 1.2.0 — shared geometry, instanced scenery, fixed-step movement.
 const elements=new Map();
 const $=s=>{if(!elements.has(s))elements.set(s,document.querySelector(s));return elements.get(s);};
 const canvas=$('#world');
@@ -7,7 +8,7 @@ const coarse=matchMedia('(pointer:coarse)').matches;
 let renderer;
 try{renderer=new T.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});}catch(e){$('#start').textContent='3D is unavailable in this browser';throw e;}
 renderer.setPixelRatio(Math.min(devicePixelRatio,coarse?1:1.25));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=false;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.setClearColor(0xa9def0);
-const scene=new T.Scene();scene.fog=new T.Fog(0xa9def0,100,235);const camera=new T.PerspectiveCamera(58,innerWidth/innerHeight,.1,350);
+const scene=new T.Scene();scene.fog=new T.Fog(0xa9def0,150,560);const camera=new T.PerspectiveCamera(58,innerWidth/innerHeight,.1,680);
 scene.add(new T.HemisphereLight(0xd8f6ff,0x67935b,2.3));const sun=new T.DirectionalLight(0xfff2d4,2.6);sun.position.set(-45,85,35);sun.castShadow=false;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-95,right:95,top:95,bottom:-95,far:220});sun.shadow.bias=-.0005;scene.add(sun);
 const cubeGeometry=new T.BoxGeometry(1,1,1), ballGeometry=new T.IcosahedronGeometry(1,0);
 const starGeometry=new T.OctahedronGeometry(.65), ringGeometry=new T.TorusGeometry(1,.19,5,16);
@@ -22,10 +23,10 @@ function ring(x,y,z){const m=new T.Mesh(ringGeometry,mat(0x4ff2ff));m.position.s
 function star(x,y,z){let m=new T.Mesh(starGeometry,starMaterial);m.position.set(x,y,z);scene.add(m);stars.push({m,id:stars.length,y});}
 function crate(x,z,type){let m=box(x,0,z,2.4,2.4,2.4,[0,0x29bfe6,0xff866e,0xc197ff][type]);const band=box(x,1,z,2.6,.4,2.6,0xfff2c9);const sign=label(['','GRAPPLE HOOK','BUBBLE BLASTER','SUPER BOUNCE'][type],x,5,z,'#214652',.7);crates.push({m,band,sign,x,z,type});}
 // A compact continuous world, with recognizable landmarks and short paths.
-box(0,-2,0,190,2,190,0x8fcf89);box(0,-3,0,210,1,210,0x55c3d5);
-box(0,0,0,22,.08,184,0x70888e);box(0,0,0,184,.08,18,0x70888e);
-box(-13,0,0,3,.16,184,0xd9ddd0);box(13,0,0,3,.16,184,0xd9ddd0);box(0,0,-11,184,.16,3,0xd9ddd0);box(0,0,11,184,.16,3,0xd9ddd0);
-for(let i=-85;i<90;i+=10){if(Math.abs(i)>13){box(0,.09,i,.3,.01,4,0xffedac);box(i,.09,0,4,.01,.3,0xffedac);}}
+box(0,-2,0,570,2,570,0x8fcf89);box(0,-3,0,610,1,610,0x55c3d5);
+box(0,0,0,22,.08,560,0x70888e);box(0,0,0,560,.08,18,0x70888e);
+box(-13,0,0,3,.16,560,0xd9ddd0);box(13,0,0,3,.16,560,0xd9ddd0);box(0,0,-11,560,.16,3,0xd9ddd0);box(0,0,11,560,.16,3,0xd9ddd0);
+for(let i=-265;i<270;i+=10){if(Math.abs(i)>13){box(0,.09,i,.3,.01,4,0xffedac);box(i,.09,0,4,.01,.3,0xffedac);}}
 // Fountain square and colorful city blocks.
 box(27,0,28,29,.2,28,0xe5d9b5);box(27,.2,29,10,.8,10,0xfff3d8,true);box(27,1,29,8,.12,8,0x46c6e4);box(27,1.1,29,2,2.2,2,0xf7edcd,true);ball(27,3.7,29,.85,0x6de0ec);
 label('SUNSHINE SQUARE',24,10,46,'#307f72',1);
@@ -47,13 +48,17 @@ for(let i=0;i<16;i++){let x=-83+(i%8)*23,z=i<8?86:-87;if(Math.abs(x)>17)tree(x,z
 crate(20,17,1);crate(-23,-22,2);crate(27,-60,3);
 for(const [x,z]of [[17,12],[19,15],[24,21],[34,34],[37,44],[-18,12],[-36,12],[-59,12],[-19,-17],[-26,-26],[-44,-47],[-69,-50],[-33,-66],[22,-18],[35,-38],[63,-53],[48,-65],[48,-83],[0,55],[-18,67],[64,74]])star(x,1.7,z);
 // Clouds beyond the island.
-for(let i=0;i<12;i++){let x=Math.sin(i*2.4)*115,z=Math.cos(i*2.4)*115;for(let j=0;j<3;j++)box(x+j*5,42+(i%4)*5,z,9,3+j%2*2,6,0xffffff);}
+for(let i=0;i<12;i++){let x=Math.sin(i*2.4)*290,z=Math.cos(i*2.4)*290;for(let j=0;j<3;j++)box(x+j*5,42+(i%4)*5,z,9,3+j%2*2,6,0xffffff);}
 // Blocky explorer, intentionally readable at a distance.
 const player=new T.Group();scene.add(player);function limb(w,h,d,c,x,y,z){let m=new T.Mesh(cubeGeometry,mat(c));m.scale.set(w,h,d);m.position.set(x,y,z);m.castShadow=true;player.add(m);return m;}
 limb(1.35,1.35,.8,0xf5b943,0,1.8,0);limb(1.15,1.1,1.05,0xf3cf9c,0,3,0);limb(1.3,.32,1.15,0x326a78,0,3.65,0);limb(1.4,.12,.5,0x326a78,0,3.54,.5);limb(.16,.16,.05,0x273f49,-.25,3.1,.55);limb(.16,.16,.05,0x273f49,.25,3.1,.55);limb(.62,.8,.4,0xe77e4e,0,1.8,-.54);const legs=[limb(.49,.95,.6,0x3b677b,-.37,.53,0),limb(.49,.95,.6,0x3b677b,.37,.53,0)],arms=[limb(.43,1.15,.57,0xf3cf9c,-.9,1.9,0),limb(.43,1.15,.57,0xF3cf9c,.9,1.9,0)];player.position.set(14,0,5);
 
+const expansion=buildExpansion({T,scene,box,ball,label,tree,ring,star,pads});
+const boardVisual=new T.Mesh(new T.BoxGeometry(1.8,.12,.45),new T.MeshBasicMaterial({color:0x75ffe0}));boardVisual.position.set(0,.2,-.1);boardVisual.visible=false;player.add(boardVisual);
+const WORLD_LIMIT=284;
+
 // Bake scenery into spatial batches. Moving objects and pickups stay independent.
-const dynamicMeshes=new Set([...stars.map(s=>s.m),...anchors,...crates.flatMap(c=>[c.m,c.band])]);
+const dynamicMeshes=new Set([...expansion.dynamic,...stars.map(s=>s.m),...anchors,...crates.flatMap(c=>[c.m,c.band])]);
 const batches=new Map();
 let originalSceneryMeshes=0;
 for(const mesh of [...scene.children]){
@@ -73,20 +78,34 @@ for(const b of boxes)b.bounds=new T.Box3(new T.Vector3(b.x-b.w/2-.15,b.bottom,b.
 const v1=new T.Vector3(), v2=new T.Vector3(), v3=new T.Vector3();
 const ray=new T.Ray(), rayHit=new T.Vector3(), cameraTarget=new T.Vector3(), cameraOffset=new T.Vector3();
 const UP=new T.Vector3(0,1,0);
-const names=['Sunshine Square','Botanical Bot Park','Bubble Beach','Skyhop Hill'];
+const names=expansion.districts.map(d=>d.name);
+const districtCenters=expansion.districts;
+function areaAt(pos){let best=0,score=Infinity;for(let i=0;i<districtCenters.length;i++){const d=districtCenters[i],dx=pos.x-d.x,dz=pos.z-d.z,limit=i<4?68:76,dist=Math.hypot(dx,dz);if(dist<limit&&dist<score){score=dist;best=i;}}return best;}
+function districtName(){return names[currentArea]||names[0];}
 let saved={};
 try{const value=JSON.parse(localStorage.getItem('pocketCity-v1')||'{}');if(value&&typeof value==='object')saved=value;}catch{}
 const validArray=(a,test)=>Array.isArray(a)?a.filter(test):[];
 const unlocked=new Set([0,...validArray(saved.tools,n=>[1,2,3].includes(n))]);
 const collected=new Set(validArray(saved.stars,n=>Number.isInteger(n)&&n>=0&&n<stars.length));
-const visited=new Set(validArray(saved.areas,n=>Number.isInteger(n)&&n>=0&&n<4));
+const foundCrystals=new Set(validArray(saved.crystals,n=>Number.isInteger(n)&&n>=0&&n<expansion.crystals.length));
+const rescued=new Set(validArray(saved.rescues,n=>Number.isInteger(n)&&n>=0&&n<expansion.rescues.length));
+const powered=new Set(validArray(saved.relays,n=>Number.isInteger(n)&&n>=0&&n<expansion.relays.length));
+let boardOwned=!!saved.boardOwned,boardRiding=false,vaultOpened=!!saved.vaultOpened,skyLit=!!saved.skyLit;
+let neonBest=Number.isFinite(saved.neonBest)&&saved.neonBest>0?saved.neonBest:null;
+for(const c of expansion.crystals)if(foundCrystals.has(c.id))c.m.visible=false;
+for(const r of expansion.relays)if(powered.has(r.id))r.m.visible=false;
+for(const rescue of expansion.rescues)if(rescued.has(rescue.id))rescue.g.visible=false;
+if(boardOwned)expansion.boardPickup.visible=false;
+if(vaultOpened)expansion.vault.visible=false;
+if(skyLit)expansion.beacon.material.color.set(0x7affe8);
+const visited=new Set(validArray(saved.areas,n=>Number.isInteger(n)&&n>=0&&n<names.length));
 let botHits=Number.isFinite(saved.hits)?Math.max(0,Math.floor(saved.hits)):0;
 let raceBest=Number.isFinite(saved.raceBest)&&saved.raceBest>0?saved.raceBest:null;
 for(const s of stars)s.m.visible=!collected.has(s.id);
 for(const c of crates){c.m.visible=c.band.visible=c.sign.visible=!unlocked.has(c.type);}
 let tool=0,active=false,paused=false,yaw=Math.PI*.8,pitch=.32,vy=0,onGround=true;
 let time=0,actionCooldown=0,grapple=null,drag=null,joystick={x:0,y:0},sound=!!saved.sound,audio;
-let currentArea=-1,toastTimer,saveTimer,saveDirty=false;
+let currentArea=-1,toastTimer,saveTimer,saveDirty=false,atlasOpen=false;
 let sprintToggle=false,dashTime=0,dashCooldown=0,dashX=0,dashZ=0;
 let velocityX=0,velocityZ=0,coyote=.12,jumpBuffer=0,airJump=true,useHeld=false;
 let combo=0,comboLeft=0,boostLeft=0,bubbleStreak=0,bubbleStreakLeft=0;
@@ -113,17 +132,19 @@ for(let i=0;i<MAX_BUBBLES;i++){
 const contact=new T.Mesh(new T.CircleGeometry(.95,16),new T.MeshBasicMaterial({color:0x365b52,transparent:true,opacity:.25,depthWrite:false}));
 contact.rotation.x=-Math.PI/2;scene.add(contact);
 // Optional repeatable course; all checkpoints are on unobstructed roads.
-const course=[[0,5],[0,-21],[-21,-11],[-43,-11],[-43,0],[0,0],[0,37],[0,56],[14,55],[14,15]];
-let race={active:false,index:0,elapsed:0};
+const cityCourse=[[0,5],[0,-21],[-21,-11],[-43,-11],[-43,0],[0,0],[0,37],[0,56],[14,55],[14,15]];
+const neonCourse=[[132,146],[132,190],[132,240],[185,240],[240,240],[240,185],[240,132],[185,132],[132,132],[132,146]];
+let course=cityCourse,raceKind='city',race={active:false,index:0,elapsed:0};
 const raceMarker=new T.Mesh(new T.TorusGeometry(2.7,.23,6,28),new T.MeshBasicMaterial({color:0xffce43}));
 raceMarker.visible=false;scene.add(raceMarker);
 const raceBeam=new T.Mesh(new T.CylinderGeometry(.16,.16,18,5),new T.MeshBasicMaterial({color:0xffce43,transparent:true,opacity:.38,depthWrite:false}));
 raceBeam.visible=false;scene.add(raceBeam);
 const spawn=new T.Vector3(14,0,5);
+const homeSpawn=spawn.clone();
 
 function flushSave(){
   if(!saveDirty)return;
-  try{localStorage.setItem('pocketCity-v1',JSON.stringify({tools:[...unlocked],stars:[...collected],areas:[...visited],hits:botHits,raceBest,sound,quality}));saveDirty=false;}catch{}
+  try{localStorage.setItem('pocketCity-v1',JSON.stringify({tools:[...unlocked],stars:[...collected],areas:[...visited],hits:botHits,raceBest,sound,quality,crystals:[...foundCrystals],rescues:[...rescued],relays:[...powered],boardOwned,vaultOpened,skyLit,neonBest}));saveDirty=false;}catch{}
 }
 function save(){saveDirty=true;clearTimeout(saveTimer);saveTimer=setTimeout(flushSave,400);}
 addEventListener('pagehide',flushSave);
@@ -136,23 +157,29 @@ function tone(f=600){
   }catch{}
 }
 function toast(s){$('#toast').textContent=s;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2800);}
+function missionForArea(){
+  if(currentArea===4){if(powered.size<expansion.relays.length)return ['Power the moon relays',`Activate ${expansion.relays.length-powered.size} relay${expansion.relays.length-powered.size===1?'':'s'} around Moonbase Marshmallow.`];return ['Rocket ride ready','All relays are online. Visit the red rocket for a moon launch.'];}
+  if(currentArea===5){if(foundCrystals.size<expansion.crystals.length)return ['Prism crystal hunt',`Find ${expansion.crystals.length-foundCrystals.size} glowing crystal${expansion.crystals.length-foundCrystals.size===1?'':'s'} to open the vault.`];if(!vaultOpened)return ['Open the treasure vault','The canyon vault is powered. Walk to its gold door and press E.'];return ['Treasure found','Prism Canyon is cleared. Try the canyon rooftops and grappling rings.'];}
+  if(currentArea===6){if(rescued.size<expansion.rescues.length)return ['Rescue the lost buddies',`Find ${expansion.rescues.length-rescued.size} tiny robot${expansion.rescues.length-rescued.size===1?'':'s'} in Gigglecap Grove and press E.`];return ['Grove team complete','The lost buddies are safe. Bounce across the giant mushroom caps.'];}
+  if(currentArea===7){if(!boardOwned)return ['Claim a hoverboard','Find the mint hoverboard beside the Neon Boardwalk entrance.'];return ['Neon Loop challenge',neonBest?`Beat your best Neon Loop time of ${neonBest.toFixed(1)} seconds.`:'Press City Sprint to run the Neon Loop.'];}
+  if(currentArea===8){if(!skyLit)return ['Reach the sky beacon','Grapple up the floating islands and press E at the beacon.'];return ['Cloudtop complete','You lit the beacon. Look down from the islands and find the hidden stars.'];}
+  if(!unlocked.has(1))return ['Your first gadget is close','Follow the stars to the blue crate beside the fountain.'];
+  if(!unlocked.has(2))return ['Bubble dance party','Find the orange crate across the road in the robot park.'];
+  if(!unlocked.has(3))return ['Bounce into the beach','The purple crate by the beach unlocks giant jumps.'];
+  if(visited.size<4)return ['Head for Skyhop Hill','Try a double jump or a giant bounce on the mountain trail.'];
+  return [collected.size===stars.length?'City superstar!':'Race or reach the rooftops',collected.size===stars.length?'All 82 stars found! Beat a race time or start a robot dance party.':`${stars.length-collected.size} stars to go. Chain 3 quick pickups for a speed boost!`];
+}
 function ui(){
-  $('#stars').textContent=collected.size;$('#progress').style.width=visited.size/4*100+'%';
-  $('#progressText').textContent=visited.size+' of 4 neighborhoods explored';
+  $('#stars').textContent=collected.size;$('#progress').style.width=visited.size/names.length*100+'%';$('#progressText').textContent=visited.size+' of '+names.length+' places explored';
   document.querySelectorAll('[data-tool]').forEach(b=>{b.classList.toggle('unlocked',unlocked.has(+b.dataset.tool));b.classList.toggle('selected',+b.dataset.tool===tool);b.setAttribute('aria-pressed',String(+b.dataset.tool===tool));});
-  let title,text;
-  if(!unlocked.has(1)){title='Your first gadget is close';text='Follow the stars to the blue crate beside the fountain.';}
-  else if(!unlocked.has(2)){title='Bubble dance party';text='Find the orange crate across the road in the robot park.';}
-  else if(!unlocked.has(3)){title='Bounce into the beach';text='The purple crate by the beach unlocks giant jumps.';}
-  else if(visited.size<4){title='Head for Skyhop Hill';text='Try a double jump or a giant bounce on the mountain trail.';}
-  else{title=collected.size===stars.length?'City superstar!':'Race or reach the rooftops';text=collected.size===stars.length?'All stars found! Beat your race time or start a robot dance party.':`${stars.length-collected.size} stars to go. Chain 3 quick pickups for a speed boost!`;}
-  $('#questTitle').textContent=title;$('#questText').textContent=text;
+  const mission=missionForArea();$('#questTitle').textContent=mission[0];$('#questText').textContent=mission[1];
+  if($('#areaSub'))$('#areaSub').textContent=expansion.districts[currentArea]?.activity||'A little adventure around every corner';
 }
 function select(n){
   if(!unlocked.has(n)){toast(['','Blue crate: beside the fountain','Orange crate: robot park','Purple crate: beach'][n]);return;}
   tool=n;useHeld=false;ui();
   $('#tip').textContent=coarse?'Drag to look · Tap Jump twice · Dash for a boost':[
-    'WASD / arrows · Shift to sprint · Space ×2 to double jump · Q to dash',
+    'WASD / arrows · Shift to sprint · Space ×2 to double jump · Q to dash · M for atlas',
     'Aim near a blue ring · E / click to grapple · Space to release · Q to dash',
     'Face a robot · Hold E / USE to fire bubbles · Q to dash',
     'E / click for a giant bounce · Space for an extra jump · Q to dash'
@@ -199,7 +226,7 @@ function dash(){
 }
 function use(){
   if(!active||paused||actionCooldown>0)return;
-  if(tool===0){dash();return;}
+  if(tool===0){interact();return;}
   actionCooldown=tool===2?.19:.22;
   if(tool===1){
     const a=chooseAnchor();
@@ -230,9 +257,9 @@ function clearInputs(){
   Object.keys(keys).forEach(k=>delete keys[k]);joystick.x=joystick.y=0;$('#thumb').style.transform='';
   drag=null;stickId=null;useHeld=false;velocityX=velocityZ=0;jumpBuffer=0;
 }
-function setPause(p){paused=p;$('#menu').hidden=!p;clearInputs();lastFrame=null;accumulator=0;if(p)flushSave();}
+function setPause(p){paused=p;$('#menu').hidden=!p;if(p){atlasOpen=false;$('#atlas').hidden=true;}clearInputs();lastFrame=null;accumulator=0;if(p)flushSave();}
 function respawn(message='Back at the fountain. Ready to go!'){
-  player.position.copy(spawn);vy=0;grapple=null;dashTime=0;onGround=true;airJump=true;coyote=.12;cameraReady=false;
+  player.position.copy(spawn);vy=0;grapple=null;dashTime=0;boardRiding=false;onGround=true;airJump=true;coyote=.12;cameraReady=false;
   clearInputs();if(race.active)endRace(false);toast(message);
 }
 function setQuality(){
@@ -242,21 +269,19 @@ function setQuality(){
   qualityClock=frameTotal=frameCount=0;
 }
 function startRace(){
-  setPause(false);respawn('City Sprint! Follow the gold checkpoints.');
-  yaw=Math.PI/2;race={active:true,index:0,elapsed:0};raceMarker.visible=raceBeam.visible=true;placeCheckpoint();
-  $('#raceButton').textContent='Stop race';
+  const neon=currentArea===7&&boardOwned;setPause(false);if(race.active)endRace(false);
+  raceKind=neon?'neon':'city';course=neon?neonCourse:cityCourse;
+  if(neon){player.position.set(132,0,146);boardRiding=true;toast('Neon Loop! Follow the gold gates.');}else{player.position.copy(homeSpawn);boardRiding=false;toast('City Sprint! Follow the gold gates.');}
+  vy=0;onGround=true;airJump=true;yaw=neon?Math.PI:Math.PI/2;cameraReady=false;race={active:true,index:0,elapsed:0};raceMarker.visible=raceBeam.visible=true;placeCheckpoint();$('#raceButton').textContent='Stop race';
 }
 function placeCheckpoint(){const [x,z]=course[race.index];raceMarker.position.set(x,2.7,z);raceBeam.position.set(x,10,z);}
 function endRace(finished){
-  if(finished){
-    const record=raceBest===null||race.elapsed<raceBest;if(record){raceBest=race.elapsed;save();}
-    toast(`${record?'New best!':'Race complete!'} ${race.elapsed.toFixed(1)} seconds ★`);burst(player.position,0xffd342,20);
-  }
-  race.active=false;raceMarker.visible=raceBeam.visible=false;$('#raceButton').textContent='▶ City Sprint';
+  if(finished){const best=raceKind==='neon'?neonBest:raceBest,record=best===null||race.elapsed<best;if(record){if(raceKind==='neon')neonBest=race.elapsed;else raceBest=race.elapsed;save();}toast(`${record?'New best!':'Race complete!'} ${race.elapsed.toFixed(1)} seconds ★`);burst(player.position,0xffd342,20);}
+  race.active=false;boardRiding=false;raceMarker.visible=raceBeam.visible=false;$('#raceButton').textContent=currentArea===7&&boardOwned?'▶ Neon Loop':'▶ City Sprint';
 }
 $('#start').onclick=()=>{
   active=true;document.body.classList.add('playing');yaw=Math.PI;pitch=.28;lastFrame=null;cameraReady=false;select(unlocked.has(1)?1:0);
-  toast(unlocked.has(1)?'Welcome back! Try a dash or the City Sprint.':'Follow the stars to your first gadget!');
+  currentArea=areaAt(player.position);ui();toast(unlocked.has(1)?'Welcome back! Try the atlas, dash, or a race.':'Follow the stars to your first gadget!');
 };
 $('#pause').onclick=()=>{if(active)setPause(true);};$('#resume').onclick=()=>setPause(false);
 $('#home').onclick=()=>{respawn();setPause(false);};
@@ -269,6 +294,8 @@ $('#jump').onpointerdown=e=>{e.preventDefault();jump();};
 $('#use').onpointerdown=e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);use();useHeld=tool===2;};
 $('#use').onpointerup=$('#use').onpointercancel=()=>useHeld=false;
 $('#use').addEventListener('lostpointercapture',()=>useHeld=false);
+$('#atlasButton').onclick=()=>openAtlas();$('#atlasClose').onclick=()=>openAtlas();$('#home').onclick=()=>{respawn();setPause(false);};
+for(const b of document.querySelectorAll('[data-travel]'))b.onclick=()=>fastTravel(+b.dataset.travel);
 for(const b of document.querySelectorAll('[data-tool]'))b.onclick=()=>select(+b.dataset.tool);
 addEventListener('keydown',e=>{
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&active)e.preventDefault();
@@ -276,7 +303,7 @@ addEventListener('keydown',e=>{
   if(e.code==='Escape'&&active){setPause(!paused);return;}
   if(!active||paused)return;
   keys[e.code]=true;
-  if(e.code==='Space')jump();if(e.code==='KeyE')use();if(e.code==='KeyQ')dash();
+  if(e.code==='Space')jump();if(e.code==='KeyE')use();if(e.code==='KeyF')interact();if(e.code==='KeyQ')dash();if(e.code==='KeyB')toggleBoard();if(e.code==='KeyM')openAtlas();
   if(/^Digit[1-4]$/.test(e.code))select(+e.code.slice(-1)-1);
 });
 addEventListener('keyup',e=>keys[e.code]=false);
@@ -320,6 +347,51 @@ function moveAxis(axis,amount){
   for(const b of boxes)if(player.position.y<b.top-.1&&player.position.y+3.5>b.bottom+.1&&Math.abs(x-b.x)<b.w/2+.6&&Math.abs(z-b.z)<b.d/2+.6)return;
   player.position[axis]=next;
 }
+function nearestPoint(list,limit=6){
+  let best=null,dist=limit;
+  for(const item of list){if(item.m?.visible===false||item.g?.visible===false)continue;const d=Math.hypot(player.position.x-item.x,player.position.z-item.z);if(d<dist&&Math.abs(player.position.y-(item.y||0))<Math.max(5,limit)){best=item;dist=d;}}
+  return best;
+}
+function interact(){
+  if(!active||paused||atlasOpen)return;
+  const relay=nearestPoint(expansion.relays,6);
+  if(currentArea===4&&relay){
+    powered.add(relay.id);relay.m.visible=false;burst(relay.m.position,0xffd44f,10);tone(740);save();ui();
+    toast(powered.size===expansion.relays.length?'Moonbase online! The rocket is ready.':'Relay powered! Find the next golden beacon.');return;
+  }
+  if(currentArea===4&&powered.size===expansion.relays.length&&Math.hypot(player.position.x+185,player.position.z+205)<10){
+    player.position.set(-185,17,-205);vy=28;onGround=false;airJump=true;burst(player.position,0xffd44f,18);tone(920);toast('Rocket ride! Moonbase looks tiny from up here.');return;
+  }
+  const buddy=nearestPoint(expansion.rescues,5);
+  if(currentArea===6&&buddy){rescued.add(buddy.id);buddy.g.visible=false;burst(buddy.g.position,0xff9ed8,10);tone(650);save();ui();toast(rescued.size===expansion.rescues.length?'All buddies rescued! The grove is cheering.':'Buddy rescued! Keep exploring the mushroom caps.');return;}
+  if(currentArea===5&&foundCrystals.size===expansion.crystals.length&&Math.hypot(player.position.x-248,player.position.z+235)<12){
+    vaultOpened=true;expansion.vault.visible=false;burst(player.position,0xffd342,24);boostLeft=8;save();ui();tone(1040);toast('Treasure vault open! Eight seconds of golden speed boost!');return;
+  }
+  if(currentArea===7&&!boardOwned&&Math.hypot(player.position.x-146,player.position.z-146)<8){
+    boardOwned=true;expansion.boardPickup.visible=false;boardRiding=true;save();ui();toast('Hoverboard claimed! Press B or use the Neon Loop button.');tone(880);return;
+  }
+  if(currentArea===8&&!skyLit&&Math.hypot(player.position.x-16,player.position.z-237)<8&&player.position.y>55){
+    skyLit=true;expansion.beacon.material.color.set(0x7affe8);burst(expansion.beacon.position,0x7affe8,18);save();ui();tone(1120);toast('Sky Beacon lit! You found the highest point in Pocket City.');return;
+  }
+  if(currentArea===7&&boardOwned){toggleBoard();return;}
+  toast('Explore nearby points of interest. The quest card has a hint.');
+}
+function toggleBoard(){if(!boardOwned){toast('Find the mint hoverboard in Neon Boardwalk first.');return;}boardRiding=!boardRiding;toast(boardRiding?'Hoverboard on! Speed mode activated.':'Hoverboard stored.');tone(boardRiding?720:390);}
+function openAtlas(){
+  if(!active)return;atlasOpen=!atlasOpen;$('#atlas').hidden=!atlasOpen;if(atlasOpen){clearInputs();ui();}
+}
+function fastTravel(index){
+  if(!active||index<0||index>=expansion.districts.length)return;
+  const d=expansion.districts[index];if(race.active)endRace(false);atlasOpen=false;$('#atlas').hidden=true;boardRiding=false;
+  player.position.set(d.x,d.name==='Cloudtop Islands'?22.6:0,d.z);vy=0;onGround=true;airJump=true;currentArea=index;cameraReady=false;ui();toast('Fast traveled to '+d.name+'!');
+}
+function updateExpansion(dt){
+  for(const c of expansion.crystals)if(c.m.visible){c.m.rotation.y=time*1.8;c.m.position.y=c.y+Math.sin(time*2+c.id)*.35;if(Math.hypot(player.position.x-c.x,player.position.z-c.z)<3.2&&Math.abs(player.position.y-c.y)<4){foundCrystals.add(c.id);c.m.visible=false;burst(c.m.position,0x8ffaff,10);tone(680+c.id*35);save();ui();toast(foundCrystals.size===expansion.crystals.length?'All crystals found! Visit the gold vault.':`Crystal found · ${foundCrystals.size}/${expansion.crystals.length}`);}}
+  for(const r of expansion.relays)if(r.m.visible){r.m.scale.setScalar(1+Math.sin(time*4+r.id)*.12);}
+  for(const b of expansion.rescues)if(b.g.visible)b.g.position.y=b.y+Math.sin(time*3+b.id)*.25;
+  if(expansion.vault)expansion.vault.rotation.y=Math.sin(time)*.06;
+  if(boardRiding){boardVisual.visible=true;boardVisual.rotation.z=Math.sin(time*12)*.05;}else boardVisual.visible=false;
+}
 function update(dt){
   time+=dt;actionCooldown=Math.max(0,actionCooldown-dt);dashCooldown=Math.max(0,dashCooldown-dt);
   comboLeft=Math.max(0,comboLeft-dt);boostLeft=Math.max(0,boostLeft-dt);bubbleStreakLeft=Math.max(0,bubbleStreakLeft-dt);
@@ -329,7 +401,7 @@ function update(dt){
   let z=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0)+joystick.y;
   const len=Math.max(1,Math.hypot(x,z));x/=len;z/=len;
   const moving=Math.hypot(x,z)>.05,sprinting=sprintToggle||keys.ShiftLeft||keys.ShiftRight;
-  const speed=(sprinting?SPRINT_SPEED:RUN_SPEED)*(boostLeft>0?1.25:1);
+  const speed=(boardRiding?34:sprinting?SPRINT_SPEED:RUN_SPEED)*(boostLeft>0?1.25:1);
   const smooth=1-Math.exp(-dt*(moving?24:32));
   velocityX+=((Math.cos(yaw)*x+Math.sin(yaw)*z)*speed-velocityX)*smooth;
   velocityZ+=((-Math.sin(yaw)*x+Math.cos(yaw)*z)*speed-velocityZ)*smooth;
@@ -344,7 +416,7 @@ function update(dt){
     if(t>=1){grapple=null;vy=3;airJump=true;}onGround=false;
   }else{
     moveAxis('x',vx*dt);moveAxis('z',vz*dt);
-    const oldY=player.position.y;vy-=32*dt;let newY=oldY+vy*dt;
+    const oldY=player.position.y;vy-=(currentArea===4?13:32)*dt;let newY=oldY+vy*dt;
     if(vy>0){for(const b of boxes){if(b.bottom>oldY+3.45&&b.bottom<=newY+3.5&&Math.abs(player.position.x-b.x)<b.w/2+.48&&Math.abs(player.position.z-b.z)<b.d/2+.48){newY=b.bottom-3.5;vy=0;}}}
     const floor=floorAt(player.position.x,player.position.z,oldY,newY);
     if(newY<=floor&&vy<=0){player.position.y=floor;vy=0;onGround=true;airJump=true;if(jumpBuffer>0)takeJump(14);}
@@ -353,8 +425,8 @@ function update(dt){
   if(Math.hypot(vx,vz)>1){
     const desired=Math.atan2(vx,vz),delta=Math.atan2(Math.sin(desired-player.rotation.y),Math.cos(desired-player.rotation.y));player.rotation.y+=delta*Math.min(1,dt*20);
   }
-  if(Math.abs(player.position.x)>94||Math.abs(player.position.z)>94||player.position.y< -8)respawn('Splash! Back on dry land.');
-  const area=player.position.z>62?3:player.position.z< -14?(player.position.x<0?1:2):0;
+  if(Math.abs(player.position.x)>WORLD_LIMIT||Math.abs(player.position.z)>WORLD_LIMIT||player.position.y< -8)respawn('Splash! Back on dry land.');
+  const area=areaAt(player.position);
   if(area!==currentArea){currentArea=area;$('#area').textContent=names[area];if(!visited.has(area)){visited.add(area);ui();save();if(visited.size>1)toast('Discovered '+names[area]+'!');}}
   for(const s of stars){
     if(collected.has(s.id))continue;
@@ -363,7 +435,7 @@ function update(dt){
       collected.add(s.id);s.m.visible=false;burst(s.m.position,0xffda45,8);tone(700+collected.size*10);
       combo=comboLeft>0?combo+1:1;comboLeft=4;
       if(combo>=3){boostLeft=5;toast(`★ ${combo} star streak! Speed boost!`);}
-      ui();save();if(collected.size===stars.length)toast('★ All 32 stars! You’re a city superstar!');
+      ui();save();if(collected.size===stars.length)toast('★ All 82 stars! You’re a city superstar!');
     }
   }
   for(const c of crates){
@@ -373,7 +445,7 @@ function update(dt){
       toast(['','Grapple! Aim near a blue ring and press USE.','Bubble blaster! Hold USE near the robots.','Super bounce! USE to launch, Jump to go higher.'][c.type]);tone(950);
     }
   }
-  for(const p of pads)if(onGround&&Math.hypot(player.position.x-p.x,player.position.z-p.z)<2.3){takeJump(29);airJump=true;tone(850);}
+  for(const p of pads)if(onGround&&Math.abs(player.position.y-(p.y||0))<.6&&Math.hypot(player.position.x-p.x,player.position.z-p.z)<2.3){takeJump(29);airJump=true;tone(850);}
   for(const b of bots)b.cool=Math.max(0,b.cool-dt);
   for(const bubble of bubbles){
     if(bubble.life<=0)continue;
@@ -394,6 +466,7 @@ function update(dt){
     if(bubble.life<=0){bubble.m.visible=false;bubble.target=null;}
   }
   for(const p of particles){if(p.life<=0)continue;p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;p.vy-=15*dt;}
+  updateExpansion(dt);
   if(race.active){
     race.elapsed+=dt;const [cx,cz]=course[race.index];
     if(Math.hypot(player.position.x-cx,player.position.z-cz)<4&&player.position.y<8){
@@ -405,17 +478,18 @@ function update(dt){
 
 // The map and interface update at 10 Hz; 3D motion remains display-rate smooth.
 const mapContext=$('#map').getContext('2d');
+const MAP_SCALE=.28;
 const mapBackground=document.createElement('canvas');mapBackground.width=mapBackground.height=168;
 const mapBase=mapBackground.getContext('2d');
-mapBase.fillStyle='#b2d29b';mapBase.fillRect(0,0,168,168);mapBase.fillStyle='#77b98e';mapBase.fillRect(12,12,60,60);
-mapBase.fillStyle='#eed49a';mapBase.fillRect(96,12,60,60);mapBase.fillStyle='#899996';mapBase.fillRect(76,0,16,168);mapBase.fillRect(0,77,168,14);
-mapBase.fillStyle='#fff0cf';for(const b of boxes)if(b.top>5)mapBase.fillRect(84+b.x*.76-b.w*.38,84+b.z*.76-b.d*.38,b.w*.76,b.d*.76);
+mapBase.fillStyle='#b2d29b';mapBase.fillRect(0,0,168,168);mapBase.fillStyle='#b9b9d2';mapBase.fillRect(5,5,66,66);mapBase.fillStyle='#e5b783';mapBase.fillRect(97,5,66,66);mapBase.fillStyle='#6bb393';mapBase.fillRect(5,97,66,66);mapBase.fillStyle='#6f91a8';mapBase.fillRect(97,97,66,66);mapBase.fillStyle='#899996';mapBase.fillRect(76,0,16,168);mapBase.fillRect(0,77,168,14);
+mapBase.fillStyle='#fff0cf';for(const b of boxes)if(b.top>5)mapBase.fillRect(84+b.x*MAP_SCALE-b.w*MAP_SCALE/2,84+b.z*MAP_SCALE-b.d*MAP_SCALE/2,b.w*MAP_SCALE,b.d*MAP_SCALE);
 function drawMap(){
   const c=mapContext;c.clearRect(0,0,168,168);c.drawImage(mapBackground,0,0);
-  for(const cr of crates)if(!unlocked.has(cr.type)){c.fillStyle=['','#21bde5','#f48164','#b189e1'][cr.type];c.fillRect(84+cr.x*.76-3,84+cr.z*.76-3,7,7);}
-  c.fillStyle='#e8a92b';for(const s of stars)if(!collected.has(s.id)){c.beginPath();c.arc(84+s.m.position.x*.76,84+s.m.position.z*.76,1.6,0,7);c.fill();}
-  if(race.active){const [x,z]=course[race.index];c.strokeStyle='#ac5b00';c.lineWidth=3;c.beginPath();c.arc(84+x*.76,84+z*.76,6,0,7);c.stroke();}
-  c.save();c.translate(84+player.position.x*.76,84+player.position.z*.76);c.rotate(-yaw);c.fillStyle='#1b4356';
+  for(const d of districtCenters){c.fillStyle=d===districtCenters[currentArea]?'#ff7d5e':'#557d76';c.beginPath();c.arc(84+d.x*MAP_SCALE,84+d.z*MAP_SCALE,3,0,7);c.fill();}
+  for(const cr of crates)if(!unlocked.has(cr.type)){c.fillStyle=['','#21bde5','#f48164','#b189e1'][cr.type];c.fillRect(84+cr.x*MAP_SCALE-3,84+cr.z*MAP_SCALE-3,7,7);}
+  c.fillStyle='#e8a92b';for(const s of stars)if(!collected.has(s.id)){c.beginPath();c.arc(84+s.m.position.x*MAP_SCALE,84+s.m.position.z*MAP_SCALE,1.6,0,7);c.fill();}
+  if(race.active){const [x,z]=course[race.index];c.strokeStyle='#ac5b00';c.lineWidth=3;c.beginPath();c.arc(84+x*MAP_SCALE,84+z*MAP_SCALE,6,0,7);c.stroke();}
+  c.save();c.translate(84+player.position.x*MAP_SCALE,84+player.position.z*MAP_SCALE);c.rotate(-yaw);c.fillStyle='#1b4356';
   c.beginPath();c.moveTo(0,-7);c.lineTo(5,5);c.lineTo(0,3);c.lineTo(-5,5);c.closePath();c.fill();c.restore();
 }
 function updateHud(){
@@ -428,7 +502,7 @@ function updateHud(){
   $('#pace').textContent=boostLeft>0?`★ SPEED BOOST ${Math.ceil(boostLeft)}s`:dashCooldown>0?`DASH ${dashCooldown.toFixed(1)}s`:'Q / DASH READY';
   $('#dash').classList.toggle('cooling',dashCooldown>0);
   $('#dash').setAttribute('aria-label',dashCooldown>0?'Dash recharging':'Dash');
-  $('#raceReadout').textContent=race.active?`${race.index}/${course.length} gates · ${race.elapsed.toFixed(1)}s`:raceBest?`Best ${raceBest.toFixed(1)}s · Beat your time`:'Follow the gold gates · Beat your time';
+  const best=raceKind==='neon'?neonBest:raceBest;$('#raceReadout').textContent=race.active?`${race.index}/${course.length} gates · ${race.elapsed.toFixed(1)}s`:best?`Best ${best.toFixed(1)}s · Beat your time`:(currentArea===7&&boardOwned?'Run the Neon Loop':'Follow the gold gates · Beat your time');$('#raceButton').textContent=race.active?'Stop race':(currentArea===7&&boardOwned?'▶ Neon Loop':'▶ City Sprint');
   drawMap();
 }
 function cameraFrame(dt){
@@ -445,7 +519,7 @@ function cameraFrame(dt){
   const fov=60+(movingFast?5:0);if(Math.abs(camera.fov-fov)>.05){camera.fov+=(fov-camera.fov)*(1-Math.exp(-dt*7));camera.updateProjectionMatrix();}
 }
 function visuals(){
-  const movement=Math.hypot(velocityX,velocityZ),swing=onGround?Math.sin(time*(movement>21?19:15))*Math.min(.7,movement*.04):.3;
+  const movement=Math.hypot(velocityX,velocityZ);boardVisual.visible=boardRiding;const swing=onGround?Math.sin(time*(movement>21?19:15))*Math.min(.7,movement*.04):.3;
   legs[0].rotation.x=swing;legs[1].rotation.x=-swing;arms[0].rotation.x=-swing;arms[1].rotation.x=swing;
   for(const b of bots){b.g.rotation.y=Math.sin(time*.7+b.x)*.5;b.g.position.y=b.cool>0?1+Math.sin(time*9)*.6:Math.abs(Math.sin(time*2+b.x))*.12;b.g.rotation.z=b.cool>0?Math.sin(time*12)*.18:0;}
   for(const s of stars)if(s.m.visible){s.m.rotation.y=time*2;s.m.position.y=s.y+Math.sin(time*3+s.id)*.18;}
@@ -480,7 +554,7 @@ function render(now){
   if(document.hidden){lastFrame=null;return;}
   const dt=lastFrame===null?0:Math.min(.25,Math.max(0,(now-lastFrame)/1000));lastFrame=now;
   if(paused)return;
-  if(active)advanceFrame(dt);else yaw+=dt*.045;
+  if(active&&!atlasOpen)advanceFrame(dt);else if(!active)yaw+=dt*.045;
   cameraFrame(dt||1/60);visuals();
   hudClock+=dt;if(hudClock>=.1){hudClock=0;updateHud();}
   adaptQuality(dt);renderer.render(scene,camera);
