@@ -1,6 +1,12 @@
-# Pocket City: Gadget Hunt
+# Pocket City: Gadget Hunt — v1.1
 
 A single-player, Roblox-inspired 3D browser playground. Explore a city, robot park, beach, and mountain playground. Find a grappling hook, bubble blaster, and super bounce, and collect 32 stars.
+
+## Updating an existing GitHub game
+
+Replace `index.html`, `style.css`, and `game.js` in the same location in your repository. Upload the rest of this package if you want the updated instructions and self-check script too. The Three.js library has not changed. Commit the changes, wait for Pages to finish publishing, then reload the game. On Windows, Ctrl+F5 refreshes cached files.
+
+Keep the same repository and Pages address to retain this browser's saved progress. Version 1.1 uses the existing `pocketCity-v1` save key and the same star and gadget IDs.
 
 ## Put the game on GitHub
 
@@ -37,13 +43,15 @@ Do not double-click `index.html`: browsers may block JavaScript modules when ope
 
 - **WASD / arrow keys:** move
 - **Drag the world:** turn the camera
-- **Space:** jump or release the grapple
-- **Click / E:** use the selected gadget
+- **Shift:** hold to sprint (or toggle Sprint on a phone)
+- **Q / Dash button:** short speed dash
+- **Space:** jump, press again to double-jump, or release the grapple
+- **Click / E:** use the selected gadget; hold E or the phone Use button to keep firing bubbles
 - **1–4:** select a gadget
 - **Escape:** pause or resume
-- **Phone / tablet:** left joystick to move, drag the world to look, and tap Jump or Use
+- **Phone / tablet:** left joystick to move, drag the world to look, and tap Jump, Use, or Dash. Sprint toggles faster running
 
-Walk into gadget crates to collect them. Aim at a glowing blue ring to grapple. Face a nearby robot to use the bubble blaster. Use super bounce while on the ground. Purple launch pads bounce automatically.
+Walk into gadget crates to collect them. Aim at a glowing blue ring to grapple. Face a nearby robot to use the bubble blaster. Use super bounce on the ground, with one additional boost while airborne. Purple launch pads bounce automatically. Collect 3 stars within a short streak for a 5-second speed boost. The optional City Sprint button starts a repeatable checkpoint race and saves your best time locally.
 
 ## Source files
 
@@ -62,7 +70,23 @@ All game dependencies are included. The game makes no API calls and needs no key
 
 Progress saves in this browser's local storage under `pocketCity-v1`. It does not sync across devices or between the original hosted game and GitHub Pages. Clearing site data clears progress.
 
-This is the first playable version, with single-player exploration and friendly robot targets. It is not a Roblox Studio project and has no multiplayer. Gameplay logic checks covered gadget pickups, rooftop landing, wall collision, boundary recovery, bounce, grapple, blaster, and pause. Visual browser and real-device playtesting are still needed.
+This is version 1.1, with single-player exploration, a checkpoint race, and friendly robot targets. It is not a Roblox Studio project and has no multiplayer or online leaderboard.
+
+## If play feels slow
+
+Pause and switch **Graphics** to **Smooth**. Auto mode starts at a conservative resolution and adjusts rendering resolution when sustained frames are slow. Crisp mode uses higher resolution. These options do not change game speed or progress. The game pauses when hidden or unfocused.
+
+## Self-checks
+
+Optional, with Node.js 22 or newer installed:
+
+```sh
+node checks/verify-game.mjs
+```
+
+The checks run the real scene and game logic with a stub renderer and document. They cover consistent movement from simulated 5 to 120 FPS, sprint, dash, collision, double jump, jump buffering, gadget pickup, grapple, bubble hit and repeat fire, fixed-size effect pools, star boosts, race completion, pause/resume, saved progress, and automatic graphics scaling.
+
+53 checks passed with a fresh save and malformed saved data; 55 passed with an existing save containing both valid and invalid IDs. Static scenery was grouped from 504 separate objects into 115 batches. That reduces rendering submissions; it is not a measured FPS improvement. No real-device GPU or browser frame-rate measurements have been made. Please playtest on your target devices.
 
 ## Third-party license
 
